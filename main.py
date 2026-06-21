@@ -34,7 +34,7 @@ app = FastAPI(title="GitRAG", description="A RAG system for querying any GitHub 
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # to tighten in production
+    allow_origins=["https://rag-frontend-production-xxxx.up.railway.app"],  # to tighten in production
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
