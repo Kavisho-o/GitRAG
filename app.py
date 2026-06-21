@@ -29,14 +29,15 @@ st.markdown("""
 <style>
 :root {
     --ink: #0F1419;
-    --paper: #F7F3E9;
-    --paper-dim: #EDE7D8;
-    --brass: #D4A04C;
-    --brass-dim: #B8893E;
+    --paper: #FAEDCD;
+    --paper-dim: #E9EDC9;
+    --brass: #D4A373;
+    --brass-dim: #BF8B5C;
     --oxblood: #8B3A3A;
-    --sage: #5C7A5C;
-    --graphite: #3D4147;
-    --graphite-soft: #6B6F76;
+    --sage: #CCD5AE;
+    --graphite: #6B6F76;
+    --graphite-soft: #8A8470;
+    --bg: #FEFAE0;
 }
 
 /* kill streamlit chrome */
@@ -48,10 +49,10 @@ html, body, [class*="css"] {
 }
 
 .stApp {
-    background: var(--ink);
+    background: var(--bg);
     background-image:
-        radial-gradient(circle at 20% 0%, rgba(212, 160, 76, 0.06) 0%, transparent 45%),
-        radial-gradient(circle at 80% 100%, rgba(92, 122, 92, 0.05) 0%, transparent 45%);
+        radial-gradient(circle at 20% 0%, rgba(212, 163, 115, 0.10) 0%, transparent 45%),
+        radial-gradient(circle at 80% 100%, rgba(204, 213, 174, 0.14) 0%, transparent 45%);
 }
 
 .block-container {
@@ -65,7 +66,7 @@ html, body, [class*="css"] {
     display: flex;
     align-items: baseline;
     justify-content: space-between;
-    border-bottom: 1px solid rgba(247, 243, 233, 0.12);
+    border-bottom: 1px solid rgba(15, 20, 25, 0.12);
     padding-bottom: 1.1rem;
     margin-bottom: 2.2rem;
 }
@@ -74,7 +75,7 @@ html, body, [class*="css"] {
     font-weight: 600;
     font-style: italic;
     font-size: 2.1rem;
-    color: var(--paper);
+    color: var(--ink);
     letter-spacing: -0.01em;
 }
 .gitrag-title .mark { color: var(--brass); font-style: normal; }
@@ -250,8 +251,8 @@ html, body, [class*="css"] {
     font-family: 'Fraunces', serif;
     font-style: italic;
     font-size: 1.05rem;
-    color: var(--paper);
-    opacity: 0.55;
+    color: var(--ink);
+    opacity: 0.45;
 }
 
 /* progress text */
@@ -262,7 +263,7 @@ html, body, [class*="css"] {
     padding-left: 1.1rem;
 }
 
-hr { border-color: rgba(247, 243, 233, 0.1) !important; }
+hr { border-color: rgba(15, 20, 25, 0.1) !important; }
 </style>
 """, unsafe_allow_html=True)
 
