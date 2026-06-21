@@ -1,0 +1,14 @@
+langchain  # for building language model applications
+langchain-community  # tools and integrations for LangChain
+chromadb  # vector store
+sentence-transformers  # embedding model
+gitpython  # for cloning repos programmatically
+python-dotenv
+tree-sitter # for parsing code 
+tree-sitter-python 
+groq  # for querying vectorDB
+rank-bm25  # for ranking documents
+fastapi
+uvicorn[standard]
+streamlit 
+requests  # for making HTTP requests to the FastAPI from Streamlit
