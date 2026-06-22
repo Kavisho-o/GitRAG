@@ -144,8 +144,9 @@ html, body, [class*="css"] {
     transition: all 0.15s ease !important;
     box-shadow: 0 2px 0 rgba(0,0,0,0.3) !important;
 }
-.stButton button:hover {
-    background: var(--brass-dim) !important;
+.stButton button:hover,
+[data-testid="stFormSubmitButton"] button:hover {
+    background: var(--brass) !important;
     transform: translateY(1px);
     box-shadow: 0 1px 0 rgba(0,0,0,0.3) !important;
 }
@@ -287,7 +288,7 @@ if "indexing" not in st.session_state:
 status_html = '<span class="dot live"></span>Repo indexed' if st.session_state.indexed_repo else '<span class="dot"></span>No repo indexed'
 st.markdown(f"""
 <div class="gitrag-header">
-    <div class="gitrag-title">git<span class="mark">rag</span></div>
+    <div class="gitrag-title">git<span class="mark">RAG</span></div>
     <div class="gitrag-status">{status_html}</div>
 </div>
 """, unsafe_allow_html=True)
@@ -402,7 +403,7 @@ if not st.session_state.history:
     st.markdown("""
     <div class="empty-state">
         <div class="glyph">⌗</div>
-        <div class="msg">no questions asked yet — the margins are still blank</div>
+        <div class="msg">kavi appreciates u being here :)</div>
     </div>
     """, unsafe_allow_html=True)
 else:
