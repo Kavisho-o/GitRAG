@@ -18,6 +18,7 @@ from clone_repo import clone_repo, find_python_files
 from chunk_treesitter import chunk_repo_treesitter
 from ingest import embed_and_store
 from hybrid_search import HybridSearcher
+from multi_query import multi_query_search
 from paths import CLONE_DIR
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -108,8 +109,10 @@ def ask(req: AskRequest):
         if app_state["searcher"] is None:
             raise HTTPException(status_code=400, detail="No repo has been indexed yet. Please POST to /ingest first.")
 
+        # multi-query retrieval rep;aces single searcher.search() call
         try:
-            results = app_state["searcher"].search(req.question, n_results=req.n_results)
+            # results = app_state["searcher"].search(req.question, n_results=req.n_results)
+            results = multi_query_search(req.question, app_state["searcher"], groq_client, n_results=req.n_results, n_variants=3, candidate_pool=25)
         except Exception as e:
             traceback.print_exc()
             raise HTTPException(status_code=500, detail=f"Error querying the codebase: {e}")
