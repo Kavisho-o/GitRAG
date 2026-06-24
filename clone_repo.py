@@ -46,7 +46,6 @@ def find_python_files(root: str) -> list[str]:
             if f.endswith(".py"):
                 py_files.append(os.path.join(dirpath, f))
     return py_files
-
 if __name__ == "__main__":
 
     clone_repo(REPO_URL, CLONE_DIR)

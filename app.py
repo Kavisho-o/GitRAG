@@ -7,6 +7,7 @@ import os
 import streamlit as st
 import requests
 import time
+import uuid
 
 API_BASE = os.getenv("API_BASE_URL", "http://127.0.0.1:8000")
 
@@ -17,11 +18,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
 )
 
-# ============================================================
 # DESIGN SYSTEM - injected CSS
-# Manuscript/marginalia aesthetic: aged paper + ink + brass accents
-# Fraunces (display serif) + JetBrains Mono (everything else)
-# ============================================================
 st.markdown("""
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;0,9..144,600;1,9..144,400&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -268,9 +265,7 @@ hr { border-color: rgba(15, 20, 25, 0.1) !important; }
 </style>
 """, unsafe_allow_html=True)
 
-# ============================================================
 # SESSION STATE
-# ============================================================
 if "indexed_repo" not in st.session_state:
     st.session_state.indexed_repo = None
 if "chunks_created" not in st.session_state:
@@ -281,10 +276,10 @@ if "history" not in st.session_state:
     st.session_state.history = []  # list of {q, a, sources}
 if "indexing" not in st.session_state:
     st.session_state.indexing = False
+if "session_id" not in st.session_state:
+    st.session_state.session_id = None
 
-# ============================================================
 # HEADER
-# ============================================================
 status_html = '<span class="dot live"></span>Repo indexed' if st.session_state.indexed_repo else '<span class="dot"></span>No repo indexed'
 st.markdown(f"""
 <div class="gitrag-header">
@@ -293,9 +288,7 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# ============================================================
 # INGEST SECTION
-# ============================================================
 st.markdown('<div class="margin-label">point it at a repository</div>', unsafe_allow_html=True)
 
 col1, col2 = st.columns([4, 1])
@@ -322,6 +315,7 @@ if ingest_clicked and repo_url:
             st.session_state.chunks_created = data["chunks_created"]
             st.session_state.files_processed = data["files_processed"]
             st.session_state.history = []
+            st.session_state.session_id = None
             progress_placeholder.empty()
             st.rerun()
         else:
@@ -350,9 +344,7 @@ if st.session_state.indexed_repo:
 
 st.markdown("<br>", unsafe_allow_html=True)
 
-# ============================================================
 # ASK SECTION
-# ============================================================
 st.markdown('<div class="margin-label">ask it something</div>', unsafe_allow_html=True)
 
 with st.form(key="ask_form", clear_on_submit=True):
@@ -377,12 +369,15 @@ if ask_clicked and question:
         try:
             resp = requests.post(
                 f"{API_BASE}/ask",
-                json={"question": question, "n_results": 5},
+                json={"question": question, "n_results": 5, "session_id": st.session_state.session_id or str(uuid.uuid4())},
                 timeout=60
             )
             thinking_placeholder.empty()
             if resp.status_code == 200:
                 data = resp.json()
+                
+                st.session_state.session_id = data["session_id"]  # save session_id for context in follow-up questions
+                
                 st.session_state.history.insert(0, {
                     "q": question, "a": data["answer"], "sources": data["sources"]
                 })

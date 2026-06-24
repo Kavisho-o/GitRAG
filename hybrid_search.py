@@ -8,6 +8,7 @@ from rank_bm25 import BM25Okapi
 import chromadb
 from sentence_transformers import SentenceTransformer
 from paths import CHROMA_DIR
+from reranker import Reranker
 
 MODEL_NAME = "all-MiniLM-L6-v2"
 
@@ -37,6 +38,8 @@ class HybridSearcher:
 
         tokenized_corpus = [tokenize(doc) for doc in self.documents]
         self.bm25 = BM25Okapi(tokenized_corpus)
+        
+        self.reranker = Reranker()
 
         print(f"BM25 index built on {len(self.documents)} chunks.")
 
@@ -89,15 +92,19 @@ class HybridSearcher:
 
         return sorted(fused_scores.keys(), key=lambda doc_id: fused_scores[doc_id], reverse=True)
     
-    def search(self, query: str, n_results: int = 5, candidate_pool: int = 15) -> dict:
+    def search(self, query: str, n_results: int = 5, candidate_pool: int = 25, rerank: bool = True) -> dict:
 
         '''
-        get candidates from both methods, fuse, return top n_results.
+        stage1: get candidates from both methods, fuse, return top n_results.
+        stage2: cross-encoder reranks true top_n
+
+        rerank = False will skip stage2 and return stage1 results only
+
         '''
 
         vector_ranks = self.vector_search(query, n_results=candidate_pool)
         bm25_ranks = self.bm25_search(query, n_results=candidate_pool)
-        fused_order = self.reciprocal_rank_fusion(vector_ranks, bm25_ranks)[:n_results]
+        fused_order = self.reciprocal_rank_fusion(vector_ranks, bm25_ranks)[:candidate_pool]
 
         id_to_idx = {doc_id: i for i, doc_id in enumerate(self.doc_ids)}
         documents, metadatas = [], []
@@ -107,7 +114,12 @@ class HybridSearcher:
             documents.append(self.documents[idx])
             metadatas.append(self.metadatas[idx])
 
-        return {"documents": [documents], "metadatas": [metadatas], "ids": [fused_order]}    
+        if rerank:
+            return self.reranker.rerank(query=query, docs=documents, metadatas=metadatas, ids=fused_order, top_n=n_results)
+
+        return {"documents": [documents[:n_results]], "metadatas": [metadatas[:n_results]], "ids": [fused_order[:n_results]]}  
+
+  
 if __name__ == "__main__":
 
     searcher = HybridSearcher()

@@ -3,3 +3,5 @@ __pycache__/
 *.pyc
 .env
 diagnose.py
+evaluate.py
+benchmark_results.csv
