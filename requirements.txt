@@ -10,7 +10,7 @@ fastapi
 uvicorn[standard]
 streamlit
 requests
-ragas==0.1.21
-langchain-groq
-langchain-huggingface
-datasets
+# ragas==0.1.21
+# langchain-groq
+# langchain-huggingface
+# datasets
