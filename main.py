@@ -34,7 +34,7 @@ app = FastAPI(title="GitRAG", description="A RAG system for querying any GitHub 
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://rag-frontend-production-xxxx.up.railway.app"],
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -112,7 +112,7 @@ def ask(req: AskRequest):
         # multi-query retrieval rep;aces single searcher.search() call
         try:
             # results = app_state["searcher"].search(req.question, n_results=req.n_results)
-            results = multi_query_search(req.question, app_state["searcher"], groq_client, n_results=req.n_results, n_variants=3, candidate_pool=25)
+            results = multi_query_search(req.question, app_state["searcher"], groq_client, n_results=req.n_results, n_variants=3, candidate_pool=15)
         except Exception as e:
             traceback.print_exc()
             raise HTTPException(status_code=500, detail=f"Error querying the codebase: {e}")

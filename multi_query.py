@@ -4,7 +4,7 @@ run hybrid search for each reformulation
 deduplicate and return unified result set
 '''
 
-import os
+# import os
 import json
 from groq import Groq
 
@@ -48,7 +48,7 @@ Example format: ["query one", "query two", "query three"]"""
     return []
 
 
-def multi_query_search(question: str, searcher, groq_client: Groq, n_results: int = 5, n_variants: int = 3, candidate_pool: int = 25) -> dict:
+def multi_query_search(question: str, searcher, groq_client: Groq, n_results: int = 5, n_variants: int = 3, candidate_pool: int = 15) -> dict:
 
     '''
     generates n_variants rewrites of question
@@ -68,7 +68,7 @@ def multi_query_search(question: str, searcher, groq_client: Groq, n_results: in
     for q in all_queries:
         
         try:
-            results = searcher.search(q, n_results=candidate_pool, candidate_pool=candidate_pool)
+            results = searcher.search(q, n_results=n_results, candidate_pool=candidate_pool, rerank=False)   # skip reranking for each variant, only rerank final top n_results
         except Exception as e:
             print(f"[multi_query] Error searching for query '{q}': {e}")
             continue
@@ -82,10 +82,18 @@ def multi_query_search(question: str, searcher, groq_client: Groq, n_results: in
                 merged_metas.append(meta)
                 merged_ids.append(chunk_id)
 
-    # Return the top n_results from the unified results
-    final_docs = merged_docs[:n_results]
-    final_metas = merged_metas[:n_results]
-    final_ids = merged_ids[:n_results]
+    # return the top n_results from the unified results
+    # single rerank on merged pool
+
+    if merged_docs:
+        reranked_results = searcher.reranker.rerank(question, merged_docs, merged_metas, merged_ids, top_n=n_results)
+        final_docs = reranked_results["documents"][0]
+        final_metas = reranked_results["metadatas"][0]
+        final_ids = reranked_results["ids"][0]
+    else:
+        final_docs = []
+        final_metas = []
+        final_ids = []
 
     print(f"[multi_query] Merged {len(merged_docs)} unique chunks, returning top {len(final_docs)}.")
     return {
