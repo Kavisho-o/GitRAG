@@ -6,6 +6,7 @@ GET /health - health check
 '''
 
 import os
+import threading
 import traceback
 import uuid
 import time
@@ -23,6 +24,7 @@ from paths import CLONE_DIR
 from fastapi.middleware.cors import CORSMiddleware
 
 load_dotenv()
+_api_ingest_lock = threading.Lock()  # ensure only one ingestion at a time
 
 GROQ_MODEL = "llama-3.3-70b-versatile"
 HISTORY_WINDOW = 3  # 3 (user, assistant) exchanges = last 6 messages
@@ -72,27 +74,28 @@ def ingest(req: IngestRequest):
     if not req.repo_url.startswith("https://github.com/"):
         raise HTTPException(status_code=400, detail="Only public GitHub repositories are supported (https://github.com/username/repo)")
 
-    try:
-        clone_repo(req.repo_url, CLONE_DIR)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Could not clone repo. Check it's public and the URL is correct. ({e})")
+    with _api_ingest_lock:
+        try:
+            clone_repo(req.repo_url, CLONE_DIR)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Could not clone repo. Check it's public and the URL is correct. ({e})")
 
-    files = find_python_files(CLONE_DIR)
-    if not files:
-        raise HTTPException(status_code=400, detail="No Python files found in this repo. Only Python codebases are supported right now.")
+        files = find_python_files(CLONE_DIR)
+        if not files:
+            raise HTTPException(status_code=400, detail="No Python files found in this repo. Only Python codebases are supported right now.")
 
-    chunks = chunk_repo_treesitter(files)
-    if not chunks:
-        raise HTTPException(status_code=400, detail="No code chunks could be extracted from this repo. Check that the code is valid Python.")
+        chunks = chunk_repo_treesitter(files)
+        if not chunks:
+            raise HTTPException(status_code=400, detail="No code chunks could be extracted from this repo. Check that the code is valid Python.")
 
-    try:
-        embed_and_store(chunks)
-        app_state["searcher"] = HybridSearcher()
-        app_state["repo_url"] = req.repo_url
-        app_state["sessions"] = {}
-    except Exception as e:
-        traceback.print_exc()
-        raise HTTPException(status_code=500, detail=f"Error embedding and storing chunks: {e}")
+        try:
+            embed_and_store(chunks)
+            app_state["searcher"] = HybridSearcher()
+            app_state["repo_url"] = req.repo_url
+            app_state["sessions"] = {}
+        except Exception as e:
+            traceback.print_exc()
+            raise HTTPException(status_code=500, detail=f"Error embedding and storing chunks: {e}")
 
     return IngestResponse(
         status="indexed",

@@ -37,6 +37,9 @@ class HybridSearcher:
         self.documents = all_data["documents"]
         self.metadatas = all_data["metadatas"]
 
+        if not self.documents:
+            raise ValueError("ChromaDB collection is empty after ingestion. Please check the ingestion pipeline.")
+
         tokenized_corpus = [tokenize(doc) for doc in self.documents]
         self.bm25 = BM25Okapi(tokenized_corpus)
         
