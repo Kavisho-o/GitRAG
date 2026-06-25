@@ -32,6 +32,7 @@ GROQ_MODEL = "llama-3.3-70b-versatile"
 HISTORY_WINDOW = 3  # 3 (user, assistant) exchanges = last 6 messages
 
 groq_client = Groq(api_key=os.environ["GROQ_API_KEY"])
+USE_RERANKER = os.getenv("USE_RERANKER", "true").lower() == "true"
 
 app_state = {"searcher": None, "repo_url": None, "sessions": {}}
 
@@ -40,7 +41,8 @@ app_state = {"searcher": None, "repo_url": None, "sessions": {}}
 async def lifespan(app: FastAPI):
     print("Pre-warming models...")
     get_embed_model()
-    get_cross_encoder()
+    if USE_RERANKER:
+        get_cross_encoder()
     print("Models ready.")
     yield
 
@@ -107,7 +109,7 @@ def ingest(req: IngestRequest):
 
         try:
             embed_and_store(chunks)
-            app_state["searcher"] = HybridSearcher()
+            app_state["searcher"] = HybridSearcher(use_reranker=USE_RERANKER)
             app_state["repo_url"] = req.repo_url
             app_state["sessions"] = {}
         except Exception as e:

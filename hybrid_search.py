@@ -21,7 +21,7 @@ def tokenize(text: str) -> list[str]:
 
 class HybridSearcher:
 
-    def __init__(self, collection_name: str = "codebase_treesitter", db_path: str = CHROMA_DIR):
+    def __init__(self, collection_name: str = "codebase_treesitter", db_path: str = CHROMA_DIR, use_reranker: bool = True):
 
         self.embed_model = get_embed_model()
         client = chromadb.PersistentClient(path=db_path)
@@ -43,7 +43,7 @@ class HybridSearcher:
         tokenized_corpus = [tokenize(doc) for doc in self.documents]
         self.bm25 = BM25Okapi(tokenized_corpus)
         
-        self.reranker = Reranker()
+        self.reranker = Reranker() if use_reranker else None
 
         print(f"BM25 index built on {len(self.documents)} chunks.")
 
@@ -118,7 +118,7 @@ class HybridSearcher:
             documents.append(self.documents[idx])
             metadatas.append(self.metadatas[idx])
 
-        if rerank:
+        if rerank and self.reranker:
             return self.reranker.rerank(query=query, docs=documents, metadatas=metadatas, ids=fused_order, top_n=n_results)
 
         return {"documents": [documents[:n_results]], "metadatas": [metadatas[:n_results]], "ids": [fused_order[:n_results]]}  
