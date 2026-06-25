@@ -21,6 +21,7 @@ from chunk_treesitter import chunk_repo_treesitter
 from ingest import embed_and_store
 from hybrid_search import HybridSearcher
 from multi_query import multi_query_search
+from agentic_rag import run_agentic_rag
 from paths import CLONE_DIR
 from fastapi.middleware.cors import CORSMiddleware
 from model_cache import get_embed_model, get_cross_encoder
@@ -131,80 +132,108 @@ def ask(req: AskRequest):
         if app_state["searcher"] is None:
             raise HTTPException(status_code=400, detail="No repo has been indexed yet. Please POST to /ingest first.")
 
-        # multi-query retrieval rep;aces single searcher.search() call
-        try:
-            # results = app_state["searcher"].search(req.question, n_results=req.n_results)
-            results = multi_query_search(req.question, app_state["searcher"], groq_client, n_results=req.n_results, n_variants=3, candidate_pool=15)
-        except Exception as e:
-            traceback.print_exc()
-            raise HTTPException(status_code=500, detail=f"Error querying the codebase: {e}")
-
-        if not results["documents"][0]:
-            raise HTTPException(status_code=404, detail="No relevant code chunks found for the question.")
-
-        context_parts = []
-        for doc, meta in zip(results["documents"][0], results["metadatas"][0]):
-            tag = (
-                f"[{meta['source']}  ::  {meta['chunk_type']}  {meta['name']} "
-                f"(lines {meta['start_line']}-{meta['end_line']})]"
-            )
-            context_parts.append(f"{tag}\n{doc}\n")
-        context = "\n\n---\n\n".join(context_parts)
-
         sessions = app_state["sessions"]
         if req.session_id not in sessions:
             sessions[req.session_id] = []
         history = sessions[req.session_id]
 
-        system_msg = {
-            "role": "system",
-            "content": (
-                "You are a code assistant answering questions about a specific codebase. "
-                "Use ONLY the code context provided in the user message to answer. "
-                "If the context doesn't contain enough information, say so explicitly — "
-                "do not guess or hallucinate. Reference specific function/class names."
-            ),
-        }
+        # Legacy retrieval + direct completion path (unused after switching to agentic RAG):
+        # try:
+        #     # results = app_state["searcher"].search(req.question, n_results=req.n_results)
+        #     results = multi_query_search(req.question, app_state["searcher"], groq_client, n_results=req.n_results, n_variants=3, candidate_pool=15)
+        # except Exception as e:
+        #     traceback.print_exc()
+        #     raise HTTPException(status_code=500, detail=f"Error querying the codebase: {e}")
+        #
+        # if not results["documents"][0]:
+        #     raise HTTPException(status_code=404, detail="No relevant code chunks found for the question.")
+        #
+        # context_parts = []
+        # for doc, meta in zip(results["documents"][0], results["metadatas"][0]):
+        #     tag = (
+        #         f"[{meta['source']}  ::  {meta['chunk_type']}  {meta['name']} "
+        #         f"(lines {meta['start_line']}-{meta['end_line']})]"
+        #     )
+        #     context_parts.append(f"{tag}\n{doc}\n")
+        # context = "\n\n---\n\n".join(context_parts)
+        #
+        # system_msg = {
+        #     "role": "system",
+        #     "content": (
+        #         "You are a code assistant answering questions about a specific codebase. "
+        #         "Use ONLY the code context provided in the user message to answer. "
+        #         "If the context doesn't contain enough information, say so explicitly — "
+        #         "do not guess or hallucinate. Reference specific function/class names."
+        #     ),
+        # }
+        #
+        # user_msg = {
+        #     "role": "user",
+        #     "content": (
+        #         f"CODE CONTEXT:\n{context}\n\n"
+        #         f"QUESTION: {req.question}"
+        #     ),
+        # }
+        #
+        # windowed_history = history[-(HISTORY_WINDOW * 2):]
+        # messages = [system_msg] + windowed_history + [user_msg]
+        #
+        # max_retries = 3
+        # answer = None
+        # for attempt in range(max_retries):
+        #     try:
+        #         response = groq_client.chat.completions.create(
+        #             model=GROQ_MODEL,
+        #             messages=messages,
+        #             temperature=0.1,
+        #         )
+        #         answer = response.choices[0].message.content
+        #         break
+        #     except Exception as e:
+        #         if attempt < max_retries - 1:
+        #             time.sleep(2 ** attempt)
+        #         else:
+        #             traceback.print_exc()
+        #             raise HTTPException(status_code=502, detail=f"LLM unavailable after {max_retries} retries: {e}")
+        #
+        # history.append(user_msg)
+        # history.append({"role": "assistant", "content": answer})
+        #
+        # sources = [
+        #     f"{m['source']} :: {m['chunk_type']} {m['name']} (lines {m['start_line']}-{m['end_line']})"
+        #     for m in results["metadatas"][0]
+        # ]
+        # contexts = results["documents"][0]
+        #
+        # return AskResponse(answer=answer, sources=sources, contexts=contexts, session_id=req.session_id)
 
-        user_msg = {
+        try:
+            result = run_agentic_rag(
+                question=req.question,
+                searcher=app_state["searcher"],
+                groq_client=groq_client,
+                history=history,
+                n_results=req.n_results,
+            )
+        except Exception as e:
+            traceback.print_exc()
+            raise HTTPException(status_code=500, detail=f"Agentic RAG pipeline error: {e}")
+
+        if not result["answer"]:
+            raise HTTPException(status_code=500, detail="Pipeline completed but produced no answer.")
+
+        history.append({
             "role": "user",
-            "content": (
-                f"CODE CONTEXT:\n{context}\n\n"
-                f"QUESTION: {req.question}"
-            ),
-        }
+            "content": f"CODE CONTEXT: [retrieved context]\n\nQUESTION: {req.question}"
+        })
+        history.append({"role": "assistant", "content": result["answer"]})
 
-        windowed_history = history[-(HISTORY_WINDOW * 2):]
-        messages = [system_msg] + windowed_history + [user_msg]
-
-        max_retries = 3
-        answer = None
-        for attempt in range(max_retries):
-            try:
-                response = groq_client.chat.completions.create(
-                    model=GROQ_MODEL,
-                    messages=messages,
-                    temperature=0.1,
-                )
-                answer = response.choices[0].message.content
-                break
-            except Exception as e:
-                if attempt < max_retries - 1:
-                    time.sleep(2 ** attempt)
-                else:
-                    traceback.print_exc()
-                    raise HTTPException(status_code=502, detail=f"LLM unavailable after {max_retries} retries: {e}")
-
-        history.append(user_msg)
-        history.append({"role": "assistant", "content": answer})
-
-        sources = [
-            f"{m['source']} :: {m['chunk_type']} {m['name']} (lines {m['start_line']}-{m['end_line']})"
-            for m in results["metadatas"][0]
-        ]
-        contexts = results["documents"][0]
-
-        return AskResponse(answer=answer, sources=sources, contexts=contexts, session_id=req.session_id)
+        return AskResponse(
+            answer=result["answer"],
+            sources=result["sources"],
+            contexts=result["contexts"],
+            session_id=req.session_id,
+        )
 
     except HTTPException:
         raise
