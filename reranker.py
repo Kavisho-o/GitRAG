@@ -14,7 +14,8 @@ ran on shortlist, never the full corpus.
 
 '''
 
-from sentence_transformers import CrossEncoder
+# from sentence_transformers import CrossEncoder
+from model_cache import get_cross_encoder
 
 MODEL_NAME = "cross-encoder/ms-marco-MiniLM-L-6-v2"
 
@@ -22,7 +23,7 @@ class Reranker:
 
     def __init__(self):
         print("Loading CrossEncoder Reranker...")
-        self.model = CrossEncoder(MODEL_NAME)
+        self.model = get_cross_encoder()
         print("CrossEncoder Reranker loaded.")
 
 

@@ -16,6 +16,7 @@ from sentence_transformers import SentenceTransformer
 from clone_repo import clone_repo as clone_repo_impl, find_python_files, REPO_URL
 from chunk_treesitter import chunk_repo_treesitter, CodeChunk
 from paths import CLONE_DIR, CHROMA_DIR
+from model_cache import get_embed_model
 
 MODEL_NAME = "all-MiniLM-L6-v2"
 CHROMA_PATH = CHROMA_DIR
@@ -44,7 +45,7 @@ def chunk_files(file_paths: list[str]) -> list[CodeChunk]:
 def embed_and_store(chunks: list[CodeChunk]) -> tuple[SentenceTransformer, "chromadb.Collection"]:
 
     print("Loading embedding model...")
-    model = SentenceTransformer(MODEL_NAME)  
+    model = get_embed_model()
     client = chromadb.PersistentClient(path=CHROMA_PATH)  # persists to disk, survives restarts
 
     try: 

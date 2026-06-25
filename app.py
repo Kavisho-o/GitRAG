@@ -9,7 +9,7 @@ import requests
 import time
 import uuid
 
-API_BASE = os.getenv("API_BASE_URL", "http://127.0.0.1:8000")
+API_BASE = os.getenv("API_BASE_URL", "http://127.0.0.1:8000").rstrip("/")
 
 st.set_page_config(
     page_title="GitRAG",
@@ -391,9 +391,7 @@ if ask_clicked and question:
             thinking_placeholder.empty()
             st.error("The LLM call took too long. Try again.")
 
-# ============================================================
 # HISTORY / ANSWERS
-# ============================================================
 if not st.session_state.history:
     st.markdown("""
     <div class="empty-state">

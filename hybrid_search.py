@@ -6,9 +6,10 @@ BM25 + vector hybrid search combined via score fusion
 import re
 from rank_bm25 import BM25Okapi
 import chromadb
-from sentence_transformers import SentenceTransformer
+# from sentence_transformers import SentenceTransformer
 from paths import CHROMA_DIR
 from reranker import Reranker
+from model_cache import get_embed_model
 
 MODEL_NAME = "all-MiniLM-L6-v2"
 
@@ -22,7 +23,7 @@ class HybridSearcher:
 
     def __init__(self, collection_name: str = "codebase_treesitter", db_path: str = CHROMA_DIR):
 
-        self.embed_model = SentenceTransformer(MODEL_NAME)
+        self.embed_model = get_embed_model()
         client = chromadb.PersistentClient(path=db_path)
         self.collection = client.get_collection(collection_name)
 
