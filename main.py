@@ -10,6 +10,7 @@ import threading
 import traceback
 import uuid
 import time
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 from dotenv import load_dotenv
@@ -22,6 +23,7 @@ from hybrid_search import HybridSearcher
 from multi_query import multi_query_search
 from paths import CLONE_DIR
 from fastapi.middleware.cors import CORSMiddleware
+from model_cache import get_embed_model, get_cross_encoder
 
 load_dotenv()
 _api_ingest_lock = threading.Lock()  # ensure only one ingestion at a time
@@ -32,12 +34,28 @@ HISTORY_WINDOW = 3  # 3 (user, assistant) exchanges = last 6 messages
 groq_client = Groq(api_key=os.environ["GROQ_API_KEY"])
 
 app_state = {"searcher": None, "repo_url": None, "sessions": {}}
-app = FastAPI(title="GitRAG", description="A RAG system for querying any GitHub repo", version="0.2.0")
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    print("Pre-warming models...")
+    get_embed_model()
+    get_cross_encoder()
+    print("Models ready.")
+    yield
+
+
+app = FastAPI(
+    title="GitRAG",
+    description="A RAG system for querying any GitHub repo",
+    version="0.2.0",
+    lifespan=lifespan,
+)
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=True,
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -61,7 +79,6 @@ class AskResponse(BaseModel):
     sources: list[str]
     contexts: list[str]
     session_id: str
-
 
 @app.get("/health")
 def health():
