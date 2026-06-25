@@ -370,7 +370,7 @@ if ask_clicked and question:
             resp = requests.post(
                 f"{API_BASE}/ask",
                 json={"question": question, "n_results": 5, "session_id": st.session_state.session_id or str(uuid.uuid4())},
-                timeout=60
+                timeout=120
             )
             thinking_placeholder.empty()
             if resp.status_code == 200:
@@ -389,7 +389,7 @@ if ask_clicked and question:
             st.error("Backend isn't reachable. Is `uvicorn main:app --reload` running on port 8000?")
         except requests.exceptions.Timeout:
             thinking_placeholder.empty()
-            st.error("The LLM call took too long. Try again.")
+            st.error("Took too long — try a shorter question or try again.")
 
 # HISTORY / ANSWERS
 if not st.session_state.history:
