@@ -91,9 +91,9 @@ def multi_query_search(question: str, searcher, groq_client: Groq, n_results: in
         final_metas = reranked_results["metadatas"][0]
         final_ids = reranked_results["ids"][0]
     else:
-        final_docs = []
-        final_metas = []
-        final_ids = []
+        final_docs = merged_docs[:n_results]
+        final_metas = merged_metas[:n_results]
+        final_ids = merged_ids[:n_results]
 
     print(f"[multi_query] Merged {len(merged_docs)} unique chunks, returning top {len(final_docs)}.")
     return {
