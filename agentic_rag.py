@@ -281,7 +281,7 @@ def build_rag_graph() -> object:
     '''
 
     graph = StateGraph(RAGState)
-
+    
     # add nodes
     graph.add_node("retrieve", retrieve)
     graph.add_node("evaluate_retrieval", evaluate_retrieval)
