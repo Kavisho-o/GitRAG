@@ -117,7 +117,7 @@ Respond with ONLY valid JSON, no explanation:
             temperature=0.0,
             max_tokens=80,
         )
-        raw = response.choices[0].message.content.strip()
+        raw = _clean_json_response(response.choices[0].message.content)
         parsed = json.loads(raw)
         quality = parsed.get("quality", "good")
 
@@ -350,3 +350,12 @@ def run_agentic_rag(
         "sources": final_state["sources"],
         "contexts": final_state["contexts"],
     }
+
+def _clean_json_response(raw: str) -> str:
+    raw = raw.strip()
+    if raw.startswith("```"):
+        raw = raw.strip("`")
+        if raw.lower().startswith("json"):
+            raw = raw[4:]
+        raw = raw.strip()
+    return raw

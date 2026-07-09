@@ -46,24 +46,40 @@ def extract_chunks_from_file(filepath: str) -> list[CodeChunk]:
     chunks = []
     covered_lines = set()  # to track lines already included in chunks
 
-    for node in root.children: 
-        if node.type in ('function_definition', 'class_definition' ):
+    for node in root.children:
 
-            start_line, end_line = node.start_point[0], node.end_point[0]
+        # decorated functions/classes are wrapped in a decorated_definition node;
+        # the actual function_definition/class_definition is a child of it.
+        # unwrap so decorators aren't lost into the module-level catch-all.
+        
+        outer_node = node
+        target_node = node
+        if node.type == 'decorated_definition':
+            inner = next(
+                (c for c in node.children if c.type in ('function_definition', 'class_definition')),
+                None
+            )
+            if inner is None:
+                continue
+            target_node = inner
+
+        if target_node.type in ('function_definition', 'class_definition'):
+
+            # use outer_node's range so decorator lines are included in the chunk
+            start_line, end_line = outer_node.start_point[0], outer_node.end_point[0]
             chunk_text = '\n'.join(source_lines[start_line:end_line+1])
 
-            # extract function/class name for better metadata
+            # extract function/class name from the actual def/class node
             name = "unknown"
-            for child in node.children:
+            for child in target_node.children:
                 if child.type == "identifier":
                     name = child.text.decode('utf-8')
                     break
 
-            
             chunks.append(CodeChunk(
                 text=chunk_text,
                 source_file=filepath,
-                chunk_type='function' if node.type == 'function_definition' else 'class',
+                chunk_type='function' if target_node.type == 'function_definition' else 'class',
                 name=name,
                 start_line=start_line+1,
                 end_line=end_line+1

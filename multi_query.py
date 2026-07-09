@@ -8,6 +8,8 @@ deduplicate and return unified result set
 import json
 from groq import Groq
 
+from agentic_rag import _clean_json_response
+
 GROQ_MODEL = "llama-3.1-8b-instant"  
 
 def generate_query_variants(question: str, groq_client: Groq, n: int = 3) -> list[str]:
@@ -33,7 +35,7 @@ Example format: ["query one", "query two", "query three"]"""
         temperature=0.7,   # higher temp = more diverse rewrites
         max_tokens=200,
     )
-    raw = response.choices[0].message.content.strip()
+    raw = _clean_json_response(response.choices[0].message.content)
 
     try:
         variants = json.loads(raw)
