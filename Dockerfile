@@ -1,12 +1,15 @@
 FROM python:3.13-slim
 
-# git is required at runtime by gitpython (clone_repo.py) to clone target repos
 RUN apt-get update && apt-get install -y --no-install-recommends git \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
 COPY requirements.txt .
+
+# install CPU-only torch first so sentence-transformers doesn't pull the huge CUDA build
+RUN pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu
+
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
