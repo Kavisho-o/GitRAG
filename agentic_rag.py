@@ -12,6 +12,7 @@ from groq import Groq
 from hybrid_search import HybridSearcher
 from multi_query import multi_query_search
 from langgraph.graph import StateGraph, END
+from llm_utils import _clean_json_response
 
 class RAGState(TypedDict):
 
@@ -350,12 +351,3 @@ def run_agentic_rag(
         "sources": final_state["sources"],
         "contexts": final_state["contexts"],
     }
-
-def _clean_json_response(raw: str) -> str:
-    raw = raw.strip()
-    if raw.startswith("```"):
-        raw = raw.strip("`")
-        if raw.lower().startswith("json"):
-            raw = raw[4:]
-        raw = raw.strip()
-    return raw

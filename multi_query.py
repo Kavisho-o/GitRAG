@@ -8,7 +8,7 @@ deduplicate and return unified result set
 import json
 from groq import Groq
 
-from agentic_rag import _clean_json_response
+from llm_utils import _clean_json_response
 
 GROQ_MODEL = "llama-3.1-8b-instant"  
 
