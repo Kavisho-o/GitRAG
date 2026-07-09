@@ -2,7 +2,7 @@
 
 Ask questions about any public GitHub Python codebase in plain English. Point it at a repo — it clones, parses, and indexes the code with tree-sitter, then answers questions using multi-query hybrid retrieval and Groq's Llama 3.3 70B, with every answer citing the exact file and function it came from.
 
-**API:** https://git-rag-api.up.railway.app/docs
+**API:** https://gitrag-7dan.onrender.com/docs#/
 
 **Demo walkthrough:** [Watch on Loom](https://www.loom.com/share/7cf2002e224a4ff0b3d6e6b49fc35dd4)
 
