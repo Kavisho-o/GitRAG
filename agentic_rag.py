@@ -113,7 +113,7 @@ Respond with ONLY valid JSON, no explanation:
 
     try:
         response = state["groq_client"].chat.completions.create(
-            model="llama-3.3-70b-versatile",
+            model="openai/gpt-oss-120b",   # Update: Groq has deprecated the llama-3.3-70b model, so we are using openai/gpt-oss-120b instead
             messages=[{"role": "user", "content": prompt}],
             temperature=0.0,
             max_tokens=80,
@@ -161,7 +161,7 @@ Respond with ONLY the rewritten query string. No explanation, no quotes."""
 
     try:
         response = state["groq_client"].chat.completions.create(
-            model="llama-3.3-70b-versatile",
+            model="openai/gpt-oss-120b",  # Update: Groq has deprecated the llama-3.3-70b model, so we are using openai/gpt-oss-120b instead
             messages=[{"role": "user", "content": prompt}],
             temperature=0.4,
             max_tokens=80,
@@ -221,7 +221,7 @@ def generate(state: RAGState) -> dict:
     for attempt in range(max_retries):
         try:
             response = state["groq_client"].chat.completions.create(
-                model="llama-3.3-70b-versatile",
+                model="openai/gpt-oss-120b",  # Update: Groq has deprecated the llama-3.3-70b model, so we are using openai/gpt-oss-120b instead
                 messages=messages,
                 temperature=0.1,
             )

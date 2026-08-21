@@ -29,7 +29,7 @@ from model_cache import get_embed_model, get_cross_encoder
 load_dotenv()
 _api_ingest_lock = threading.Lock()  # ensure only one ingestion at a time
 
-GROQ_MODEL = "llama-3.3-70b-versatile"
+GROQ_MODEL = "openai/gpt-oss-120b"
 HISTORY_WINDOW = 3  # 3 (user, assistant) exchanges = last 6 messages
 
 groq_client = Groq(api_key=os.environ["GROQ_API_KEY"])

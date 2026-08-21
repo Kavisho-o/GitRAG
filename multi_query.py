@@ -10,7 +10,7 @@ from groq import Groq
 
 from llm_utils import _clean_json_response
 
-GROQ_MODEL = "llama-3.1-8b-instant"  
+GROQ_MODEL = "openai/gpt-oss-20b"  # Update: Groq has deprecated the llama-3.3-70b model, so we are using openai/gpt-oss-20b instead
 
 def generate_query_variants(question: str, groq_client: Groq, n: int = 3) -> list[str]:
     '''
