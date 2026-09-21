@@ -1,4 +1,4 @@
-# gitrag
+# GitRag
 
 Ask questions about any public GitHub Python codebase in plain English. Point it at a repo — it clones, parses, and indexes the code with tree-sitter, then answers questions using multi-query hybrid retrieval and Groq's Llama 3.3 70B, with every answer citing the exact file and function it came from.
 
